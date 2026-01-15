@@ -1,5 +1,7 @@
 # Knowledge Graph Studio
 
+Access App: https://mjamiv.github.io/knowledge-graphs/
+
 A powerful web application for creating, visualizing, and studying knowledge graphs from documents using AI.
 
 ![Knowledge Graph Studio](https://img.shields.io/badge/React-18-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue) ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-green)
