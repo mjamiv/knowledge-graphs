@@ -8,6 +8,11 @@
   font-weight: 400;
   color: #f8fafc;
   background-color: #0f172a;
+  --graph-bg-0: #0b1220;
+  --graph-bg-1: #0f172a;
+  --graph-grid: rgba(148, 163, 184, 0.08);
+  --graph-glow-a: rgba(56, 189, 248, 0.18);
+  --graph-glow-b: rgba(14, 116, 144, 0.14);
 }
 
 * {
@@ -46,10 +51,40 @@ html, body, #root {
 .graph-container {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .graph-container canvas {
   display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.graph-surface {
+  background:
+    radial-gradient(circle at 20% 15%, var(--graph-glow-a), transparent 45%),
+    radial-gradient(circle at 80% 85%, var(--graph-glow-b), transparent 40%),
+    linear-gradient(180deg, var(--graph-bg-0), var(--graph-bg-1) 60%, var(--graph-bg-0));
+  overflow: hidden;
+}
+
+.graph-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--graph-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--graph-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+  animation: graph-grid-drift 24s linear infinite;
+}
+
+@keyframes graph-grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 120px 120px; }
 }
 
 /* File drop zone */
