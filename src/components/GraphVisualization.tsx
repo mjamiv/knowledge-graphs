@@ -507,13 +507,14 @@ export default function GraphVisualization() {
         ctx.shadowBlur = 12;
       }
       ctx.beginPath();
+      const sx = source.x!, sy = source.y!, tx = target.x!, ty = target.y!;
       if (Math.abs(curvature) > 0.01) {
-        const control = getCurveControlPoint(source, target, curvature);
-        ctx.moveTo(source.x, source.y);
-        ctx.quadraticCurveTo(control.x, control.y, target.x, target.y);
+        const control = getCurveControlPoint({ x: sx, y: sy }, { x: tx, y: ty }, curvature);
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(control.x, control.y, tx, ty);
       } else {
-        ctx.moveTo(source.x, source.y);
-        ctx.lineTo(target.x, target.y);
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(tx, ty);
       }
       ctx.stroke();
       ctx.restore();

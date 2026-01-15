@@ -70,6 +70,72 @@ export interface CentralityMetrics {
   betweenness: Record<string, number>;
   closeness: Record<string, number>;
   pageRank: Record<string, number>;
+  // Extended centrality metrics
+  eigenvector?: Record<string, number>;
+  harmonic?: Record<string, number>;
+  katz?: Record<string, number>;
+}
+
+export interface DirectedCentralityMetrics {
+  inDegree: Record<string, number>;
+  outDegree: Record<string, number>;
+  // Hub nodes have high out-degree (reference many others)
+  // Authority nodes have high in-degree (referenced by many)
+}
+
+export interface DirectedAdjacency {
+  outgoing: Map<string, Set<string>>;
+  incoming: Map<string, Set<string>>;
+}
+
+export interface TopologyMetrics {
+  diameter: number;
+  radius: number;
+  averagePathLength: number;
+  eccentricity: Record<string, number>;
+  peripheryNodes: string[]; // Nodes with max eccentricity
+  centerNodes: string[]; // Nodes with min eccentricity
+}
+
+export interface CommunityResult {
+  communities: Map<string, number>; // nodeId -> communityId
+  communityCount: number;
+  modularity: number; // Quality score 0-1
+  communitySizes: Record<number, number>;
+  algorithm: 'label_propagation' | 'louvain';
+}
+
+export interface LinkPrediction {
+  source: string;
+  target: string;
+  sourceName: string;
+  targetName: string;
+  score: number;
+  method: 'common_neighbors' | 'jaccard' | 'preferential_attachment' | 'adamic_adar';
+}
+
+export interface WeightedPathResult extends PathResult {
+  totalWeight: number;
+  weights: number[]; // Weight of each edge in path
+}
+
+// Algorithm visualization types
+export interface AlgorithmStep {
+  stepNumber: number;
+  description: string;
+  highlightedNodes: string[];
+  highlightedEdges: string[]; // Relationship IDs
+  nodeValues?: Record<string, number>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AlgorithmVisualization {
+  algorithmName: string;
+  totalSteps: number;
+  steps: AlgorithmStep[];
+  currentStep: number;
+  explanation: string;
+  agentRelevance: string;
 }
 
 export interface PathResult {

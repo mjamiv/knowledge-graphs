@@ -40,26 +40,30 @@ npm run lint
 ```
 src/
 ├── components/          # React UI components
-│   ├── AnalysisPanel.tsx    # Graph analysis tools (metrics, paths, search)
-│   ├── GraphVisualization.tsx # 3D/2D force-directed graph
-│   ├── Header.tsx           # Top navigation bar
-│   ├── NodeDetails.tsx      # Selected node info panel
-│   ├── SettingsModal.tsx    # API key and preferences
-│   ├── Sidebar.tsx          # Saved graphs list
-│   ├── UploadPanel.tsx      # Document upload interface
-│   └── WelcomeScreen.tsx    # Landing page
+│   ├── AnalysisPanel.tsx       # Graph analysis tools (metrics, paths, search, link prediction)
+│   ├── AlgorithmVisualizer.tsx # Step-by-step algorithm visualization (BFS, PageRank)
+│   ├── GraphVisualization.tsx  # 3D/2D force-directed graph
+│   ├── Header.tsx              # Top navigation bar
+│   ├── MetricTooltip.tsx       # Educational tooltips for graph metrics
+│   ├── NodeDetails.tsx         # Selected node info panel
+│   ├── SettingsModal.tsx       # API key and preferences
+│   ├── Sidebar.tsx             # Saved graphs list
+│   ├── UploadPanel.tsx         # Document upload interface
+│   └── WelcomeScreen.tsx       # Landing page
+├── data/
+│   └── metricExplanations.ts   # Educational content for metrics and algorithms
 ├── services/
-│   ├── documentParser.ts    # PDF/DOCX/TXT parsing
-│   └── openaiExtractor.ts   # Knowledge graph extraction via OpenAI
+│   ├── documentParser.ts       # PDF/DOCX/TXT parsing
+│   └── openaiExtractor.ts      # Knowledge graph extraction via OpenAI
 ├── stores/
-│   └── graphStore.ts        # Zustand store for app state
+│   └── graphStore.ts           # Zustand store for app state
 ├── types/
-│   └── index.ts             # TypeScript interfaces
+│   └── index.ts                # TypeScript interfaces
 ├── utils/
-│   └── graphAnalysis.ts     # Graph algorithms (centrality, paths, etc.)
-├── App.tsx                  # Main app component
-├── main.tsx                 # Entry point
-└── index.css                # Global styles + Tailwind
+│   └── graphAnalysis.ts        # Graph algorithms (centrality, paths, topology, etc.)
+├── App.tsx                     # Main app component
+├── main.tsx                    # Entry point
+└── index.css                   # Global styles + Tailwind
 ```
 
 ## Key Architectural Decisions
@@ -133,6 +137,54 @@ The extraction service (`src/services/openaiExtractor.ts`) uses:
 
 The app auto-deploys via GitHub Actions (`.github/workflows/deploy.yml`) when pushing to `main`. The Vite config uses `base: './'` for relative asset paths.
 
+## Graph Analysis Algorithms
+
+The `src/utils/graphAnalysis.ts` file provides comprehensive graph analysis:
+
+### Centrality Metrics
+- **Degree centrality**: Direct connections (normalized)
+- **Betweenness centrality**: Bridge nodes (Brandes algorithm)
+- **Closeness centrality**: Average distance to all nodes
+- **PageRank**: Recursive importance scoring
+- **Eigenvector centrality**: Importance based on neighbor importance
+- **Harmonic centrality**: Better than closeness for disconnected graphs
+- **Katz centrality**: All paths with exponential decay
+
+### Directed Graph Analysis
+- **In-degree centrality**: Identifies authority nodes (referenced by many)
+- **Out-degree centrality**: Identifies hub nodes (reference many others)
+- `buildDirectedAdjacency()`: Separate outgoing/incoming edge maps
+
+### Path Finding
+- **BFS shortest path**: `findShortestPath()` - unweighted
+- **Dijkstra's algorithm**: `findWeightedShortestPath()` - weighted paths with configurable weight inversion
+
+### Network Topology
+- `calculateTopologyMetrics()`: Diameter, radius, average path length, center/periphery nodes
+
+### Community Detection
+- **Label propagation**: `detectCommunities()` - fast, approximate
+- **Louvain algorithm**: `detectCommunitiesLouvain()` - modularity optimization
+- `calculateModularity()`: Quality score for community assignments
+
+### Link Prediction
+- `predictLinks()`: Common neighbors, Jaccard, preferential attachment, Adamic-Adar
+
+### Algorithm Visualization
+- `generateBFSSteps()`: Step-by-step BFS visualization data
+- `generatePageRankSteps()`: Step-by-step PageRank iteration data
+
+## Educational Features
+
+The `src/data/metricExplanations.ts` file contains educational content for each metric:
+- Short and full descriptions
+- High/low value interpretation
+- Agent use cases (why AI agents use this metric)
+- Formulas where applicable
+- Related metrics
+
+The `MetricTooltip` component displays this information on hover.
+
 ## Common Tasks
 
 ### Adding a new entity type
@@ -142,8 +194,15 @@ The app auto-deploys via GitHub Actions (`.github/workflows/deploy.yml`) when pu
 
 ### Adding a new graph metric
 1. Add calculation to `src/utils/graphAnalysis.ts`
-2. Add to `GraphMetrics` interface
-3. Display in `AnalysisPanel.tsx`
+2. Add to `GraphMetrics` interface or create new interface
+3. Add explanation to `src/data/metricExplanations.ts`
+4. Display in `AnalysisPanel.tsx` with `MetricTooltip`
+
+### Adding a new centrality metric
+1. Add function to `src/utils/graphAnalysis.ts`
+2. Update `CentralityMetrics` interface in `src/types/index.ts`
+3. Add explanation to `METRIC_EXPLANATIONS` in `metricExplanations.ts`
+4. Display in AnalysisPanel's centrality section
 
 ### Adding a new export format
 1. Add case to `exportGraph` function in `graphStore.ts`

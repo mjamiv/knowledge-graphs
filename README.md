@@ -27,10 +27,18 @@ A powerful web application for creating, visualizing, and studying knowledge gra
 
 ### Analysis Tools
 - **Graph Metrics**: Node count, edge count, density, clustering coefficient
-- **Centrality Analysis**: Degree, betweenness, closeness, and PageRank
-- **Path Finding**: Find shortest paths between any two entities
-- **Community Detection**: Identify clusters and groups
+- **Network Topology**: Diameter, radius, average path length, center/periphery nodes
+- **Centrality Analysis**: Degree, betweenness, closeness, PageRank, eigenvector, harmonic, and Katz centrality
+- **Directed Graph Analysis**: In-degree and out-degree centrality for identifying hubs and authorities
+- **Path Finding**: BFS shortest path and Dijkstra's weighted path algorithm
+- **Community Detection**: Louvain algorithm with modularity scoring
+- **Link Prediction**: Common neighbors, Jaccard coefficient, preferential attachment, and Adamic-Adar index
 - **Search & Filter**: Find entities by name or filter by type
+
+### Educational Features
+- **Interactive Tooltips**: Hover over any metric to learn what it measures and why it matters for AI agents
+- **Agent Context**: Each metric includes explanations of how AI agents use knowledge graphs for reasoning
+- **Algorithm Visualization**: Step-by-step visualization of BFS and PageRank algorithms
 
 ### Data Management
 - **Local Storage**: Graphs are saved in your browser
@@ -85,10 +93,11 @@ The app is configured for automatic deployment to GitHub Pages:
 
 ### Analyzing Your Graph
 
-- **Metrics Tab**: View graph statistics and centrality measures
-- **Paths Tab**: Find shortest paths between entities
-- **Search Tab**: Search for specific entities
+- **Metrics Tab**: View graph statistics, topology metrics, and multiple centrality measures with educational tooltips
+- **Paths Tab**: Find shortest paths (BFS) or weighted paths (Dijkstra) between entities
+- **Search Tab**: Search for specific entities by name or description
 - **Filter Tab**: Show/hide entity types
+- **Predict Tab**: Discover potential missing relationships using link prediction algorithms
 
 ### Keyboard Shortcuts
 
