@@ -111,7 +111,8 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
               onChange={(e) => updateSettings({ extractionModel: e.target.value as any })}
               className="select w-full"
             >
-              <option value="gpt-4o">GPT-4o (Recommended)</option>
+              <option value="gpt-5.2">GPT-5.2 (Recommended - Best Quality)</option>
+              <option value="gpt-4o">GPT-4o (Fast & Capable)</option>
               <option value="gpt-4-turbo">GPT-4 Turbo</option>
               <option value="gpt-4">GPT-4</option>
               <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster, Less Accurate)</option>

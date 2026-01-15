@@ -2,8 +2,9 @@ import * as pdfjs from 'pdfjs-dist';
 import mammoth from 'mammoth';
 import { DocumentInfo } from '../types';
 
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configure PDF.js worker - use unpkg CDN for better reliability
+// The version must match exactly with the installed pdfjs-dist package
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 /**
  * Parse a document file and extract its text content

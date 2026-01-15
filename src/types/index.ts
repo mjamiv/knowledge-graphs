@@ -121,7 +121,7 @@ export interface ExtractionProgress {
 
 export interface AppSettings {
   openaiApiKey: string;
-  extractionModel: 'gpt-4o' | 'gpt-4-turbo' | 'gpt-4' | 'gpt-3.5-turbo';
+  extractionModel: 'gpt-5.2' | 'gpt-4o' | 'gpt-4-turbo' | 'gpt-4' | 'gpt-3.5-turbo';
   maxEntities: number;
   visualizationMode: '2d' | '3d';
   showLabels: boolean;
@@ -144,7 +144,7 @@ export const ENTITY_COLORS: Record<EntityType, string> = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   openaiApiKey: '',
-  extractionModel: 'gpt-4o',
+  extractionModel: 'gpt-5.2',
   maxEntities: 100,
   visualizationMode: '3d',
   showLabels: true,
