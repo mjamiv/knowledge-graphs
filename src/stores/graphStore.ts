@@ -9,6 +9,9 @@ import {
   ExtractionProgress,
   GraphMetrics,
   CentralityMetrics,
+  ExtractionLog,
+  DetailedExtractionProgress,
+  ChunkResult,
 } from '../types';
 import { calculateMetrics, calculateCentrality } from '../utils/graphAnalysis';
 
@@ -24,6 +27,10 @@ interface GraphState {
 
   // Extraction state
   extractionProgress: ExtractionProgress;
+  detailedProgress: DetailedExtractionProgress | null;
+  currentExtractionLog: ExtractionLog | null;
+  extractionLogs: ExtractionLog[];
+  liveChunkResults: ChunkResult[];
 
   // UI state
   selectedNode: string | null;
@@ -32,6 +39,7 @@ interface GraphState {
   filterEntityTypes: string[];
   filterRelationshipTypes: string[];
   searchQuery: string;
+  showExtractionInsights: boolean;
 
   // Computed metrics (cached)
   metrics: GraphMetrics | null;
@@ -44,6 +52,15 @@ interface GraphState {
   deleteGraph: (id: string) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   setExtractionProgress: (progress: ExtractionProgress) => void;
+
+  // Extraction log actions
+  setDetailedProgress: (progress: DetailedExtractionProgress | null) => void;
+  addChunkResult: (result: ChunkResult) => void;
+  setCurrentExtractionLog: (log: ExtractionLog | null) => void;
+  saveExtractionLog: (log: ExtractionLog) => void;
+  getExtractionLogForGraph: (graphId: string) => ExtractionLog | undefined;
+  clearLiveChunkResults: () => void;
+  setShowExtractionInsights: (show: boolean) => void;
 
   // Node/selection actions
   selectNode: (nodeId: string | null) => void;
@@ -78,12 +95,17 @@ export const useGraphStore = create<GraphState>()(
       savedGraphs: [],
       settings: DEFAULT_SETTINGS,
       extractionProgress: { stage: 'idle', progress: 0, message: '' },
+      detailedProgress: null,
+      currentExtractionLog: null,
+      extractionLogs: [],
+      liveChunkResults: [],
       selectedNode: null,
       selectedNodes: [],
       highlightedPath: [],
       filterEntityTypes: [],
       filterRelationshipTypes: [],
       searchQuery: '',
+      showExtractionInsights: false,
       metrics: null,
       centrality: null,
 
@@ -131,6 +153,46 @@ export const useGraphStore = create<GraphState>()(
 
       setExtractionProgress: (progress) => {
         set({ extractionProgress: progress });
+      },
+
+      setDetailedProgress: (progress) => {
+        set({ detailedProgress: progress });
+      },
+
+      addChunkResult: (result) => {
+        set((state) => ({
+          liveChunkResults: [...state.liveChunkResults, result],
+        }));
+      },
+
+      setCurrentExtractionLog: (log) => {
+        set({ currentExtractionLog: log });
+      },
+
+      saveExtractionLog: (log) => {
+        set((state) => {
+          const existingIndex = state.extractionLogs.findIndex((l) => l.id === log.id);
+          if (existingIndex >= 0) {
+            const updated = [...state.extractionLogs];
+            updated[existingIndex] = log;
+            return { extractionLogs: updated };
+          }
+          // Keep only last 20 logs to avoid storage bloat
+          const logs = [...state.extractionLogs, log].slice(-20);
+          return { extractionLogs: logs };
+        });
+      },
+
+      getExtractionLogForGraph: (graphId) => {
+        return get().extractionLogs.find((l) => l.graphId === graphId);
+      },
+
+      clearLiveChunkResults: () => {
+        set({ liveChunkResults: [] });
+      },
+
+      setShowExtractionInsights: (show) => {
+        set({ showExtractionInsights: show });
       },
 
       selectNode: (nodeId) => {
@@ -365,6 +427,7 @@ ${edges}
       partialize: (state) => ({
         savedGraphs: state.savedGraphs,
         settings: state.settings,
+        extractionLogs: state.extractionLogs,
       }),
     }
   )

@@ -8,17 +8,39 @@ import AnalysisPanel from './components/AnalysisPanel';
 import SettingsModal from './components/SettingsModal';
 import NodeDetails from './components/NodeDetails';
 import WelcomeScreen from './components/WelcomeScreen';
+import ExtractionInsights from './components/ExtractionInsights';
 
-type PanelType = 'upload' | 'analysis' | 'saved' | null;
+type PanelType = 'upload' | 'analysis' | 'saved' | 'insights' | null;
 
 function App() {
-  const { currentGraph, settings } = useGraphStore();
+  const {
+    currentGraph,
+    settings,
+    showExtractionInsights,
+    setShowExtractionInsights,
+    currentExtractionLog,
+  } = useGraphStore();
   const [activePanel, setActivePanel] = useState<PanelType>('upload');
   const [showSettings, setShowSettings] = useState(false);
 
   const togglePanel = (panel: PanelType) => {
+    // If toggling insights, also update the store
+    if (panel === 'insights') {
+      setShowExtractionInsights(!showExtractionInsights);
+    }
     setActivePanel(activePanel === panel ? null : panel);
   };
+
+  // Sync insights panel state with store
+  const handleCloseInsights = () => {
+    setShowExtractionInsights(false);
+    if (activePanel === 'insights') {
+      setActivePanel(null);
+    }
+  };
+
+  // Determine if insights panel should show
+  const showInsightsPanel = showExtractionInsights || activePanel === 'insights';
 
   return (
     <div className="h-screen w-screen flex flex-col bg-slate-900 text-slate-100">
@@ -26,8 +48,10 @@ function App() {
         onToggleUpload={() => togglePanel('upload')}
         onToggleAnalysis={() => togglePanel('analysis')}
         onToggleSaved={() => togglePanel('saved')}
+        onToggleInsights={() => togglePanel('insights')}
         onOpenSettings={() => setShowSettings(true)}
         activePanel={activePanel}
+        hasExtractionLog={!!currentExtractionLog}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -49,12 +73,17 @@ function App() {
         </div>
 
         {/* Right panels */}
-        {activePanel === 'upload' && (
+        {activePanel === 'upload' && !showInsightsPanel && (
           <UploadPanel onClose={() => setActivePanel(null)} />
         )}
 
-        {activePanel === 'analysis' && currentGraph && (
+        {activePanel === 'analysis' && currentGraph && !showInsightsPanel && (
           <AnalysisPanel onClose={() => setActivePanel(null)} />
+        )}
+
+        {/* Extraction Insights panel */}
+        {showInsightsPanel && (
+          <ExtractionInsights onClose={handleCloseInsights} />
         )}
       </div>
 
