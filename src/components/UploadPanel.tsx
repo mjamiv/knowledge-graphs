@@ -1,16 +1,39 @@
 import { useState, useCallback } from 'react';
-import { X, Upload, FileText, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  X,
+  Upload,
+  FileText,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  Zap,
+} from 'lucide-react';
 import { useGraphStore } from '../stores/graphStore';
 import { parseDocument } from '../services/documentParser';
-import { extractKnowledgeGraph } from '../services/openaiExtractor';
-import { DocumentInfo } from '../types';
+import { extractKnowledgeGraphWithLog } from '../services/openaiExtractor';
+import { DocumentInfo, ChunkStatus } from '../types';
 
 interface UploadPanelProps {
   onClose: () => void;
 }
 
 export default function UploadPanel({ onClose }: UploadPanelProps) {
-  const { settings, setCurrentGraph, saveGraph, extractionProgress, setExtractionProgress } = useGraphStore();
+  const {
+    settings,
+    setCurrentGraph,
+    saveGraph,
+    extractionProgress,
+    setExtractionProgress,
+    detailedProgress,
+    setDetailedProgress,
+    addChunkResult,
+    clearLiveChunkResults,
+    setCurrentExtractionLog,
+    saveExtractionLog,
+    setShowExtractionInsights,
+  } = useGraphStore();
+
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedDoc, setUploadedDoc] = useState<DocumentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +83,21 @@ export default function UploadPanel({ onClose }: UploadPanelProps) {
     if (!uploadedDoc || !settings.openaiApiKey) return;
 
     setError(null);
+    clearLiveChunkResults();
 
     try {
-      const graph = await extractKnowledgeGraph(
+      const { graph, log } = await extractKnowledgeGraphWithLog(
         uploadedDoc.content,
         settings.openaiApiKey,
         settings.extractionModel,
         settings.maxEntities,
-        setExtractionProgress
+        uploadedDoc.name,
+        uploadedDoc.size,
+        {
+          onProgress: setExtractionProgress,
+          onDetailedProgress: setDetailedProgress,
+          onChunkComplete: addChunkResult,
+        }
       );
 
       // Add source document info
@@ -75,16 +105,46 @@ export default function UploadPanel({ onClose }: UploadPanelProps) {
       graph.metadata.sourceFileName = uploadedDoc.name;
       graph.name = `KG: ${uploadedDoc.name}`;
 
+      // Save extraction log
+      setCurrentExtractionLog(log);
+      saveExtractionLog(log);
+
       setCurrentGraph(graph);
       saveGraph(graph);
-      onClose();
+
+      // Clear detailed progress
+      setDetailedProgress(null);
+
+      // Show insights panel automatically
+      setShowExtractionInsights(true);
     } catch (err) {
       setError(`Extraction failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setExtractionProgress({ stage: 'error', progress: 0, message: 'Extraction failed' });
+      setDetailedProgress(null);
     }
   };
 
-  const isProcessing = extractionProgress.stage !== 'idle' && extractionProgress.stage !== 'error' && extractionProgress.stage !== 'complete';
+  const handleViewInsights = () => {
+    setShowExtractionInsights(true);
+  };
+
+  const isProcessing =
+    extractionProgress.stage !== 'idle' &&
+    extractionProgress.stage !== 'error' &&
+    extractionProgress.stage !== 'complete';
+
+  const getChunkStatusColor = (status: ChunkStatus) => {
+    switch (status) {
+      case 'success':
+        return 'bg-green-500';
+      case 'failed':
+        return 'bg-red-500';
+      case 'processing':
+        return 'bg-yellow-500 animate-pulse';
+      default:
+        return 'bg-slate-600';
+    }
+  };
 
   return (
     <div className="w-96 bg-slate-800 border-l border-slate-700 flex flex-col">
@@ -117,15 +177,9 @@ export default function UploadPanel({ onClose }: UploadPanelProps) {
           />
 
           <Upload size={40} className="mx-auto text-slate-400 mb-4" />
-          <p className="text-slate-300 mb-2">
-            Drag and drop a file here
-          </p>
-          <p className="text-slate-500 text-sm">
-            or click to browse
-          </p>
-          <p className="text-slate-600 text-xs mt-4">
-            Supports PDF, DOCX, TXT, MD
-          </p>
+          <p className="text-slate-300 mb-2">Drag and drop a file here</p>
+          <p className="text-slate-500 text-sm">or click to browse</p>
+          <p className="text-slate-600 text-xs mt-4">Supports PDF, DOCX, TXT, MD</p>
         </div>
 
         {/* Document info */}
@@ -156,8 +210,60 @@ export default function UploadPanel({ onClose }: UploadPanelProps) {
           </div>
         )}
 
-        {/* Progress */}
-        {isProcessing && (
+        {/* Enhanced Progress */}
+        {isProcessing && detailedProgress && (
+          <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+            {/* Main progress */}
+            <div className="flex items-center gap-3">
+              <Loader2 size={20} className="text-primary-400 spinner" />
+              <span className="text-sm text-slate-300 flex-1">{extractionProgress.message}</span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-2 bg-slate-600 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary-500 transition-all duration-300"
+                style={{ width: `${extractionProgress.progress}%` }}
+              />
+            </div>
+
+            {/* Chunk progress */}
+            {detailedProgress.chunkStatuses && detailedProgress.totalChunks && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>
+                    Chunk {detailedProgress.currentChunk || 0}/{detailedProgress.totalChunks}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Zap size={12} className="text-primary-400" />
+                    {detailedProgress.entitiesFound || 0} entities found
+                  </span>
+                </div>
+
+                {/* Chunk status indicators */}
+                <div className="flex gap-1">
+                  {detailedProgress.chunkStatuses.map((status, i) => (
+                    <div
+                      key={i}
+                      className={`flex-1 h-1.5 rounded ${getChunkStatusColor(status)}`}
+                      title={`Chunk ${i + 1}: ${status}`}
+                    />
+                  ))}
+                </div>
+
+                {/* Current chunk preview */}
+                {detailedProgress.currentChunkPreview && (
+                  <div className="text-xs text-slate-500 truncate">
+                    Processing: "{detailedProgress.currentChunkPreview}"
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Simple Progress fallback */}
+        {isProcessing && !detailedProgress && (
           <div className="bg-slate-700/50 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-3">
               <Loader2 size={20} className="text-primary-400 spinner" />
@@ -174,9 +280,18 @@ export default function UploadPanel({ onClose }: UploadPanelProps) {
 
         {/* Success message */}
         {extractionProgress.stage === 'complete' && (
-          <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4 flex items-center gap-3">
-            <CheckCircle size={20} className="text-green-400" />
-            <span className="text-green-300">{extractionProgress.message}</span>
+          <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <CheckCircle size={20} className="text-green-400" />
+              <span className="text-green-300 flex-1">{extractionProgress.message}</span>
+            </div>
+            <button
+              onClick={handleViewInsights}
+              className="w-full btn-secondary text-sm flex items-center justify-center gap-2"
+            >
+              <Eye size={16} />
+              View Extraction Details
+            </button>
           </div>
         )}
 

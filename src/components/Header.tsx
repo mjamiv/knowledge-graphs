@@ -5,6 +5,7 @@ import {
   Settings,
   Download,
   Share2,
+  Layers,
 } from 'lucide-react';
 import { useGraphStore } from '../stores/graphStore';
 
@@ -12,18 +13,22 @@ interface HeaderProps {
   onToggleUpload: () => void;
   onToggleAnalysis: () => void;
   onToggleSaved: () => void;
+  onToggleInsights: () => void;
   onOpenSettings: () => void;
   activePanel: string | null;
+  hasExtractionLog?: boolean;
 }
 
 export default function Header({
   onToggleUpload,
   onToggleAnalysis,
   onToggleSaved,
+  onToggleInsights,
   onOpenSettings,
   activePanel,
+  hasExtractionLog,
 }: HeaderProps) {
-  const { currentGraph, exportGraph, saveGraph } = useGraphStore();
+  const { currentGraph, exportGraph, saveGraph, showExtractionInsights } = useGraphStore();
 
   const handleExport = (format: 'json' | 'csv' | 'graphml') => {
     if (!currentGraph) return;
@@ -45,6 +50,8 @@ export default function Header({
       saveGraph(currentGraph);
     }
   };
+
+  const isInsightsActive = activePanel === 'insights' || showExtractionInsights;
 
   return (
     <header className="h-14 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-4">
@@ -72,7 +79,7 @@ export default function Header({
       <div className="flex items-center gap-2">
         <button
           onClick={onToggleUpload}
-          className={`btn-ghost flex items-center gap-2 ${activePanel === 'upload' ? 'bg-slate-700 text-white' : ''}`}
+          className={`btn-ghost flex items-center gap-2 ${activePanel === 'upload' && !isInsightsActive ? 'bg-slate-700 text-white' : ''}`}
           title="Upload Document"
         >
           <Upload size={18} />
@@ -92,12 +99,23 @@ export default function Header({
           <>
             <button
               onClick={onToggleAnalysis}
-              className={`btn-ghost flex items-center gap-2 ${activePanel === 'analysis' ? 'bg-slate-700 text-white' : ''}`}
+              className={`btn-ghost flex items-center gap-2 ${activePanel === 'analysis' && !isInsightsActive ? 'bg-slate-700 text-white' : ''}`}
               title="Analysis Tools"
             >
               <BarChart3 size={18} />
               <span className="hidden sm:inline">Analysis</span>
             </button>
+
+            {hasExtractionLog && (
+              <button
+                onClick={onToggleInsights}
+                className={`btn-ghost flex items-center gap-2 ${isInsightsActive ? 'bg-primary-600 text-white' : ''}`}
+                title="Extraction Insights"
+              >
+                <Layers size={18} />
+                <span className="hidden sm:inline">Insights</span>
+              </button>
+            )}
 
             <div className="relative group">
               <button

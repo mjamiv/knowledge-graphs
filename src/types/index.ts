@@ -152,3 +152,156 @@ export const DEFAULT_SETTINGS: AppSettings = {
   nodeSize: 'medium',
   theme: 'dark',
 };
+
+// ============================================
+// Extraction Visibility & Logging Types
+// ============================================
+
+/** Status of a single chunk extraction */
+export type ChunkStatus = 'pending' | 'processing' | 'success' | 'failed' | 'skipped';
+
+/** Result from extracting a single chunk */
+export interface ChunkResult {
+  chunkIndex: number;
+  status: ChunkStatus;
+  contentPreview: string;      // First 200 chars of chunk
+  contentLength: number;       // Total chars in chunk
+  startTime: number;           // Unix timestamp
+  endTime?: number;            // Unix timestamp
+  durationMs?: number;         // Processing time
+  entitiesExtracted: number;
+  relationshipsExtracted: number;
+  entities: Entity[];          // Raw entities from this chunk
+  relationships: RawRelationship[];  // Raw relationships (before ID resolution)
+  error?: string;              // Error message if failed
+  rawResponse?: string;        // Raw API response for debugging
+}
+
+/** Raw relationship before entity ID resolution */
+export interface RawRelationship {
+  source: string;  // Entity name (not ID)
+  target: string;  // Entity name (not ID)
+  type: string;
+  description?: string;
+}
+
+/** Tracks where an entity originated from */
+export interface EntityProvenance {
+  entityId: string;
+  entityName: string;
+  sourceChunks: number[];      // Which chunks mentioned this entity
+  firstMentionChunk: number;   // First chunk where entity appeared
+  mentionCount: number;        // How many times entity was extracted
+  mergedFrom?: string[];       // Names that were merged into this entity
+  originalDescriptions: string[]; // All descriptions from different chunks
+}
+
+/** Statistics about the merging/deduplication process */
+export interface MergeStats {
+  rawEntityCount: number;           // Total entities before dedup
+  uniqueEntityCount: number;        // After name-based dedup
+  filteredEntityCount: number;      // After max entity limit
+  entitiesDropped: number;          // How many were dropped
+  rawRelationshipCount: number;     // Total relationships before dedup
+  resolvedRelationshipCount: number; // After entity ID resolution
+  uniqueRelationshipCount: number;  // After dedup
+  relationshipsDropped: number;     // Dropped (missing entities, self-refs)
+  duplicateEntitiesMerged: number;  // Count of duplicates merged
+  duplicateRelationshipsMerged: number;
+}
+
+/** A single step/event in the extraction timeline */
+export interface ExtractionStep {
+  timestamp: number;
+  stage: ExtractionProgress['stage'];
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+/** Complete extraction log for a graph */
+export interface ExtractionLog {
+  id: string;
+  graphId: string;
+  startTime: number;
+  endTime?: number;
+  totalDurationMs?: number;
+
+  // Document info
+  documentName: string;
+  documentSize: number;
+  documentCharCount: number;
+
+  // Extraction config
+  model: string;
+  maxEntities: number;
+  chunkSize: number;
+  chunkOverlap: number;
+
+  // Chunk details
+  totalChunks: number;
+  chunksSucceeded: number;
+  chunksFailed: number;
+  chunkResults: ChunkResult[];
+
+  // Merge statistics
+  mergeStats: MergeStats;
+
+  // Entity provenance
+  entityProvenance: EntityProvenance[];
+
+  // Timeline of events
+  timeline: ExtractionStep[];
+
+  // Final counts
+  finalEntityCount: number;
+  finalRelationshipCount: number;
+
+  // Errors/warnings
+  errors: string[];
+  warnings: string[];
+}
+
+/** Summary stats shown after extraction */
+export interface ExtractionSummary {
+  processingTimeMs: number;
+  chunksProcessed: number;
+  chunksFailed: number;
+
+  // Before/after comparison
+  rawEntities: number;
+  finalEntities: number;
+  entitiesMerged: number;
+  entitiesFiltered: number;
+
+  rawRelationships: number;
+  finalRelationships: number;
+  relationshipsDropped: number;
+
+  // Breakdown by type
+  entityTypeBreakdown: Record<EntityType, number>;
+  topRelationshipTypes: Array<{ type: string; count: number }>;
+
+  // Quality indicators
+  avgEntitiesPerChunk: number;
+  avgRelationshipsPerChunk: number;
+  chunkSuccessRate: number;
+}
+
+/** Extended progress with detailed information */
+export interface DetailedExtractionProgress extends ExtractionProgress {
+  // Chunk progress
+  currentChunk?: number;
+  totalChunks?: number;
+  chunkStatuses?: ChunkStatus[];
+
+  // Running counts
+  entitiesFound?: number;
+  relationshipsFound?: number;
+
+  // Timing
+  startTime?: number;
+  estimatedTimeRemaining?: number;
+
+  // Current chunk info
+  currentChunkPreview?: string;
+}
